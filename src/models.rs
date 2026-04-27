@@ -10,16 +10,18 @@ pub struct VaultEntry {
     pub password: String,
     pub website: Option<String>,
     pub notes: Option<String>,
+    pub category: Option<String>,
     pub created_at: DateTime<Utc>,
 }
 
 impl VaultEntry {
     pub fn new(
-        title: String,
-        username: String,
-        password: String,
-        website: Option<String>,
-        notes: Option<String>,
+    title: String,
+    username: String,
+    password: String,
+    website: Option<String>,
+    notes: Option<String>,
+    category: Option<String>,
     ) -> Self {
         Self {
             id: Uuid::new_v4(),
@@ -28,6 +30,7 @@ impl VaultEntry {
             password,
             website,
             notes,
+            category,
             created_at: Utc::now(),
         }
     }
