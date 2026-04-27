@@ -21,7 +21,10 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    Init,
+    Init {
+        #[arg(short, long, default_value_t = false)]
+        force: bool,
+    },
 
     Add {
         title: String,
@@ -138,7 +141,19 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Init => {
+        Commands::Init { force } => {
+            if storage::vault_exists() && !force {
+                exit_with_error("Vault already exists. Use --force to overwrite it.");
+            }
+
+            if storage::vault_exists()
+                && force
+                && !confirm_action("This will overwrite your existing vault.")
+            {
+                ui::warning("Init cancelled.");
+                return;
+            }
+
             let master_password = ask_confirmed_master_password();
 
             if let Err(error) = storage::init_vault(&master_password) {
