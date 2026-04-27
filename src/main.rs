@@ -31,6 +31,9 @@ enum Commands {
 
         #[arg(short, long)]
         notes: Option<String>,
+
+        #[arg(short, long)]
+        category: Option<String>,
     },
 
     List,
@@ -70,6 +73,10 @@ enum Commands {
     },
 
     ChangeMaster,
+
+    Category {
+        category: String,
+    },
 }
 
 fn ask_master_password() -> String {
@@ -114,11 +121,20 @@ fn main() {
             password,
             website,
             notes,
+            category,
         } => {
             let master_password = ask_master_password();
             let mut vault = load_vault_or_exit(&master_password);
 
-            vault::add_entry(&mut vault, title, username, password, website, notes);
+            vault::add_entry(
+                &mut vault,
+                title,
+                username,
+                password,
+                website,
+                notes,
+                category,
+            );
 
             if let Err(error) = storage::save_vault(&vault, &master_password) {
                 exit_with_error(&format!("Failed to save vault: {}", error));
@@ -233,6 +249,13 @@ fn main() {
             }
 
             println!("Master password changed successfully.");
+        }
+
+        Commands::Category { category } => {
+            let master_password = ask_master_password();
+            let vault = load_vault_or_exit(&master_password);
+
+            vault::list_by_category(&vault, category);
         }
     }
 }
