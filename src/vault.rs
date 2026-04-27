@@ -1,4 +1,5 @@
 use crate::models::{Vault, VaultEntry};
+use crate::ui;
 
 pub fn add_entry(
     vault: &mut Vault,
@@ -15,7 +16,7 @@ pub fn add_entry(
 
 pub fn list_entries(vault: &Vault) {
     if vault.entries.is_empty() {
-        println!("No entries found.");
+        ui::warning("No entries found.");
         return;
     }
 
