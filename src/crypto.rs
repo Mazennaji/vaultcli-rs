@@ -7,8 +7,7 @@ use argon2::{
     Argon2, PasswordHasher,
 };
 use base64::{engine::general_purpose, Engine as _};
-use rand_core::RngCore;
-use rand_core::OsRng;
+use rand::{rngs::OsRng, RngCore};
 
 const NONCE_SIZE: usize = 12;
 

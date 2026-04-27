@@ -10,7 +10,6 @@ base64 = "0.22.1"
 chrono = { version = "0.4.44", features = ["serde"] }
 clap = { version = "4.6.1", features = ["derive"] }
 rand = { version = "0.8", features = ["std"] }
-rand_core = "0.10.1"
 rpassword = "7.4.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
