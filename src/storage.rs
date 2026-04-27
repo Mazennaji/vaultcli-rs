@@ -21,8 +21,8 @@ pub fn init_vault(master_password: &str) -> io::Result<()> {
     let vault = Vault::default();
     let json = serde_json::to_string_pretty(&vault)?;
 
-    let encrypted = crypto::encrypt(&json, &key)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+    let encrypted =
+        crypto::encrypt(&json, &key).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
     let file = EncryptedVault {
         salt,
@@ -61,8 +61,8 @@ pub fn save_vault(vault: &Vault, master_password: &str) -> io::Result<()> {
 
     let json = serde_json::to_string_pretty(vault)?;
 
-    let encrypted = crypto::encrypt(&json, &key)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+    let encrypted =
+        crypto::encrypt(&json, &key).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
     let updated = EncryptedVault {
         salt: encrypted_vault.salt,
@@ -83,6 +83,10 @@ pub fn import_backup(path: &str) -> io::Result<()> {
     Ok(())
 }
 
+pub fn vault_exists() -> bool {
+    Path::new(VAULT_FILE).exists()
+}
+
 pub fn change_master_password(old_password: &str, new_password: &str) -> io::Result<()> {
     let vault = load_vault(old_password)?;
 
@@ -92,8 +96,8 @@ pub fn change_master_password(old_password: &str, new_password: &str) -> io::Res
 
     let json = serde_json::to_string_pretty(&vault)?;
 
-    let encrypted = crypto::encrypt(&json, &key)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+    let encrypted =
+        crypto::encrypt(&json, &key).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
     let file = EncryptedVault {
         salt,
