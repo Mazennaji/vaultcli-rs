@@ -7,8 +7,9 @@ pub fn add_entry(
     password: String,
     website: Option<String>,
     notes: Option<String>,
+    category: Option<String>,
 ) {
-    let entry = VaultEntry::new(title, username, password, website, notes);
+    let entry = VaultEntry::new(title, username, password, website, notes, category);
     vault.entries.push(entry);
 }
 
@@ -109,4 +110,29 @@ pub fn summary(vault: &Vault) {
         .count();
 
     println!("Entries with websites: {}", with_websites);
+}
+
+pub fn list_by_category(vault: &Vault, category: String) {
+    let category = category.to_lowercase();
+
+    let results: Vec<&VaultEntry> = vault
+        .entries
+        .iter()
+        .filter(|entry| {
+            entry
+                .category
+                .as_ref()
+                .map(|value| value.to_lowercase() == category)
+                .unwrap_or(false)
+        })
+        .collect();
+
+    if results.is_empty() {
+        println!("No entries found in this category.");
+        return;
+    }
+
+    for entry in results {
+        println!("{} | {} | {}", entry.id, entry.title, entry.username);
+    }
 }
