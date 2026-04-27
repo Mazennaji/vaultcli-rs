@@ -42,6 +42,9 @@ enum Commands {
 
     Get {
         title: String,
+
+        #[arg(short, long, default_value_t = false)]
+        reveal: bool,
     },
 
     Search {
@@ -174,11 +177,11 @@ fn main() {
             vault::list_entries(&vault);
         }
 
-        Commands::Get { title } => {
+        Commands::Get { title, reveal } => {
             let master_password = ask_master_password();
             let vault = load_vault_or_exit(&master_password);
 
-            vault::get_entry(&vault, title);
+            vault::get_entry(&vault, title, reveal);
         }
 
         Commands::Search { query } => {
