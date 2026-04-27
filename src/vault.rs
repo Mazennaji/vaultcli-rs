@@ -73,3 +73,40 @@ pub fn search_entries(vault: &Vault, query: String) {
         println!("{} | {} | {}", entry.id, entry.title, entry.username);
     }
 }
+
+pub fn delete_entry(vault: &mut Vault, title: String) -> bool {
+    let original_len = vault.entries.len();
+
+    vault
+        .entries
+        .retain(|entry| entry.title.to_lowercase() != title.to_lowercase());
+
+    vault.entries.len() != original_len
+}
+
+pub fn update_password(vault: &mut Vault, title: String, new_password: String) -> bool {
+    if let Some(entry) = vault
+        .entries
+        .iter_mut()
+        .find(|entry| entry.title.to_lowercase() == title.to_lowercase())
+    {
+        entry.password = new_password;
+        return true;
+    }
+
+    false
+}
+
+pub fn summary(vault: &Vault) {
+    println!("Vault Summary");
+    println!("-------------");
+    println!("Total entries: {}", vault.entries.len());
+
+    let with_websites = vault
+        .entries
+        .iter()
+        .filter(|entry| entry.website.is_some())
+        .count();
+
+    println!("Entries with websites: {}", with_websites);
+}
