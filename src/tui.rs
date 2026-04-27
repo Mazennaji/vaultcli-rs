@@ -1,5 +1,6 @@
 use crate::clipboard;
 use crate::models::{Vault, VaultEntry};
+use crate::{storage, vault};
 use crossterm::{
     event::{self, Event, KeyCode},
     execute,
@@ -15,7 +16,7 @@ use ratatui::{
 };
 use std::io;
 
-pub fn run_tui(vault: &Vault) -> io::Result<()> {
+pub fn run_tui(vault: &mut Vault, master_password: &str) -> io::Result<()> {
     enable_raw_mode()?;
 
     let mut stdout = io::stdout();
@@ -24,7 +25,7 @@ pub fn run_tui(vault: &Vault) -> io::Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let result = render_loop(&mut terminal, vault);
+    let result = render_loop(&mut terminal, vault, master_password);
 
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
@@ -35,7 +36,8 @@ pub fn run_tui(vault: &Vault) -> io::Result<()> {
 
 fn render_loop(
     terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
-    vault: &Vault,
+    vault: &mut Vault,
+    master_password: &str,
 ) -> io::Result<()> {
     let mut selected: usize = 0;
     let mut reveal_password = false;
@@ -127,7 +129,7 @@ fn render_loop(
             let footer_text = if search_mode {
                 "Type to search | Backspace Delete | Enter/Esc Exit search | q Quit"
             } else {
-                "/ Search | ↑/↓ Navigate | r Reveal/Hide | c Copy password | q Quit"
+                "/ Search | ↑/↓ Navigate | r Reveal/Hide | c Copy password | d Delete | q Quit"
             };
 
             let footer = Paragraph::new(footer_text)
@@ -176,14 +178,34 @@ fn render_loop(
                         };
                     }
                     KeyCode::Char('c') => {
+                        let filtered_entries = filter_entries(vault, &search_query);
+
                         if let Some(entry) = filtered_entries.get(selected) {
                             match clipboard::copy_to_clipboard(&entry.password) {
                                 Ok(_) => {
                                     status_message = String::from("Password copied to clipboard");
                                 }
                                 Err(error) => {
-                                    status_message =
-                                        format!("Failed to copy password: {}", error);
+                                    status_message = format!("Failed to copy password: {}", error);
+                                }
+                            }
+                        } else {
+                            status_message = String::from("No entry selected");
+                        }
+                    }
+                    KeyCode::Char('d') => {
+                        let filtered_entries = filter_entries(vault, &search_query);
+
+                        if let Some(entry) = filtered_entries.get(selected) {
+                            let title = entry.title.clone();
+
+                            if vault::delete_entry(vault, title) {
+                                if storage::save_vault(vault, master_password).is_ok() {
+                                    status_message = String::from("Entry deleted");
+                                    selected = selected.saturating_sub(1);
+                                    reveal_password = false;
+                                } else {
+                                    status_message = String::from("Failed to save vault");
                                 }
                             }
                         } else {

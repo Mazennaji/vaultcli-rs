@@ -321,9 +321,9 @@ fn main() {
 
         Commands::Tui => {
             let master_password = ask_master_password();
-            let vault = load_vault_or_exit(&master_password);
+            let mut vault = load_vault_or_exit(&master_password);
 
-            if let Err(error) = tui::run_tui(&vault) {
+            if let Err(error) = tui::run_tui(&mut vault, &master_password) {
                 exit_with_error(&format!("Failed to launch TUI: {}", error));
             }
         }
