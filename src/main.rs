@@ -1,8 +1,10 @@
+mod crypto;
 mod models;
 mod storage;
 mod vault;
 
 use clap::{Parser, Subcommand};
+use rpassword::read_password;
 
 #[derive(Parser)]
 #[command(name = "vaultcli")]
@@ -32,14 +34,21 @@ enum Commands {
     },
 }
 
+fn ask_master_password() -> String {
+    println!("Enter master password:");
+    read_password().expect("Failed to read password")
+}
+
 fn main() {
     let cli = Cli::parse();
 
     match cli.command {
         Commands::Init => {
-            let vault = models::Vault::default();
-            storage::save_vault(&vault).expect("Failed to initialize vault");
-            println!("Vault initialized successfully.");
+            let master_password = ask_master_password();
+
+            storage::init_vault(&master_password).expect("Failed to initialize encrypted vault");
+
+            println!("Encrypted vault initialized successfully.");
         }
 
         Commands::Add {
@@ -49,19 +58,30 @@ fn main() {
             website,
             notes,
         } => {
-            let mut vault = storage::load_vault().expect("Failed to load vault");
+            let master_password = ask_master_password();
+
+            let mut vault = storage::load_vault(&master_password).expect("Failed to load vault");
+
             vault::add_entry(&mut vault, title, username, password, website, notes);
-            storage::save_vault(&vault).expect("Failed to save vault");
+
+            storage::save_vault(&vault, &master_password).expect("Failed to save vault");
+
             println!("Entry added successfully.");
         }
 
         Commands::List => {
-            let vault = storage::load_vault().expect("Failed to load vault");
+            let master_password = ask_master_password();
+
+            let vault = storage::load_vault(&master_password).expect("Failed to load vault");
+
             vault::list_entries(&vault);
         }
 
         Commands::Get { title } => {
-            let vault = storage::load_vault().expect("Failed to load vault");
+            let master_password = ask_master_password();
+
+            let vault = storage::load_vault(&master_password).expect("Failed to load vault");
+
             vault::get_entry(&vault, title);
         }
     }
