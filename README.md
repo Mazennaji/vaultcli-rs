@@ -1,12 +1,27 @@
-# VaultCLI RS
+<p align="center">
+  <img src="assets/logo.png" alt="VaultCLI RS" width="220"/>
+</p>
 
-> A Rust-powered encrypted password vault for the command line — fast, offline, and built on modern cryptography.
+<h1 align="center">VaultCLI RS</h1>
+
+<p align="center">
+  <strong>A Rust-powered encrypted password vault for the command line</strong><br/>
+  Fast, offline, and built on modern cryptography.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Rust-stable-orange?logo=rust" alt="Rust"/>
+  <img src="https://img.shields.io/badge/Encryption-AES--256--GCM-blue" alt="AES-256-GCM"/>
+  <img src="https://img.shields.io/badge/KDF-Argon2-green" alt="Argon2"/>
+  <img src="https://img.shields.io/badge/License-MIT-lightgrey" alt="MIT License"/>
+  <img src="https://img.shields.io/badge/Cloud-Never-red" alt="No Cloud"/>
+</p>
 
 ---
 
 ## Overview
 
-VaultCLI RS is a local-first password manager written in Rust. Your vault never touches the cloud. Every entry is encrypted at rest using AES-256-GCM, and your master password is transformed into a cryptographic key via Argon2 — meaning it is never stored, never transmitted, never exposed.
+VaultCLI RS is a local-first password manager written in Rust. Your vault never touches the cloud. Every entry is encrypted at rest using **AES-256-GCM**, and your master password is transformed into a cryptographic key via **Argon2** — meaning it is never stored, never transmitted, never exposed.
 
 Built for developers and power users who prefer a terminal over a browser extension.
 
@@ -14,15 +29,17 @@ Built for developers and power users who prefer a terminal over a browser extens
 
 ## Features
 
-- **AES-256-GCM encryption** — authenticated encryption for every vault entry
-- **Argon2 key derivation** — memory-hard, brute-force resistant master password hashing
-- **Master password protection** — your key is derived on demand, never persisted
-- **Add, list, search, get, delete, and update** entries with simple commands
-- **Password generator** — cryptographically random, configurable length
-- **Weak password audit** — detect and surface vulnerable entries
-- **Encrypted backup export and import** — portable, secure vault snapshots
-- **Master password rotation** — re-encrypt the entire vault under a new key
-- **Zero-dependency vault format** — plain encrypted JSON, no proprietary lock-in
+| Feature | Description |
+|---|---|
+| AES-256-GCM Encryption | Authenticated encryption for every vault entry |
+| Argon2 Key Derivation | Memory-hard, brute-force resistant master password hashing |
+| Master Password Protection | Your key is derived on demand, never persisted |
+| Full CRUD Operations | Add, list, search, get, delete, and update entries |
+| Password Generator | Cryptographically random, configurable length |
+| Weak Password Audit | Detect and surface vulnerable entries |
+| Encrypted Backup | Portable, secure vault export and import |
+| Master Password Rotation | Re-encrypt the entire vault under a new key |
+| Zero Lock-in | Plain encrypted JSON — no proprietary vault format |
 
 ---
 
@@ -178,18 +195,18 @@ Re-derives a new key and re-encrypts the entire vault in place.
 
 ```
 src/
-├── audit.rs       — Weak password detection logic
-├── crypto.rs      — AES-GCM encryption and Argon2 key derivation
-├── generator.rs   — Cryptographically random password generation
-├── main.rs        — CLI entry point and command routing
-├── models.rs      — Data structures for vault entries
-├── storage.rs     — Vault file read/write and serialization
-└── vault.rs       — Core vault operations
+├── audit.rs        — Weak password detection logic
+├── crypto.rs       — AES-GCM encryption and Argon2 key derivation
+├── generator.rs    — Cryptographically random password generation
+├── main.rs         — CLI entry point and command routing
+├── models.rs       — Data structures for vault entries
+├── storage.rs      — Vault file read/write and serialization
+└── vault.rs        — Core vault operations
 ```
 
 ---
 
-## Security Notes
+## Security
 
 **Master password** — Never stored. Used at runtime to derive an AES-256-GCM key via Argon2. The derived key exists only in memory for the duration of the command.
 
@@ -197,14 +214,12 @@ src/
 
 **Backup files** — Exported backups use the same encryption scheme as the vault. They are not plain text.
 
-**What to exclude from version control:**
+**Version control** — Add the following to your `.gitignore` before committing:
 
 ```
 vault.secure
 *.secure
 ```
-
-Add these to your `.gitignore` before committing.
 
 ---
 
