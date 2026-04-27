@@ -7,7 +7,8 @@ use argon2::{
     Argon2, PasswordHasher,
 };
 use base64::{engine::general_purpose, Engine as _};
-use rand::RngCore;
+use rand_core::RngCore;
+use rand_core::OsRng;
 
 const NONCE_SIZE: usize = 12;
 
@@ -35,7 +36,7 @@ pub fn encrypt(data: &str, key: &[u8; 32]) -> Result<String, String> {
     let cipher = Aes256Gcm::new_from_slice(key).map_err(|e| e.to_string())?;
 
     let mut nonce_bytes = [0u8; NONCE_SIZE];
-    rand::thread_rng().fill_bytes(&mut nonce_bytes);
+    OsRng.fill_bytes(&mut nonce_bytes);
 
     let nonce = Nonce::from_slice(&nonce_bytes);
 
