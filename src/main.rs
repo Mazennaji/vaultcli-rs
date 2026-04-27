@@ -1,4 +1,6 @@
+mod audit;
 mod crypto;
+mod generator;
 mod models;
 mod storage;
 mod vault;
@@ -17,6 +19,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     Init,
+
     Add {
         title: String,
         username: String,
@@ -28,10 +31,23 @@ enum Commands {
         #[arg(short, long)]
         notes: Option<String>,
     },
+
     List,
+
     Get {
         title: String,
     },
+
+    Search {
+        query: String,
+    },
+
+    Generate {
+        #[arg(short, long, default_value_t = 16)]
+        length: usize,
+    },
+
+    Audit,
 }
 
 fn ask_master_password() -> String {
@@ -83,6 +99,27 @@ fn main() {
             let vault = storage::load_vault(&master_password).expect("Failed to load vault");
 
             vault::get_entry(&vault, title);
+        }
+
+        Commands::Search { query } => {
+            let master_password = ask_master_password();
+
+            let vault = storage::load_vault(&master_password).expect("Failed to load vault");
+
+            vault::search_entries(&vault, query);
+        }
+
+        Commands::Generate { length } => {
+            let password = generator::generate_password(length);
+            println!("{}", password);
+        }
+
+        Commands::Audit => {
+            let master_password = ask_master_password();
+
+            let vault = storage::load_vault(&master_password).expect("Failed to load vault");
+
+            audit::audit_entries(&vault.entries);
         }
     }
 }
