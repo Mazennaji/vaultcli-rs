@@ -84,9 +84,22 @@ fn ask_master_password() -> String {
     read_password().expect("Failed to read password")
 }
 
-fn ask_new_master_password() -> String {
+fn ask_confirmed_master_password() -> String {
     println!("Enter new master password:");
-    read_password().expect("Failed to read password")
+    let password = read_password().expect("Failed to read password");
+
+    println!("Confirm new master password:");
+    let confirmation = read_password().expect("Failed to read password");
+
+    if password != confirmation {
+        exit_with_error("Master passwords do not match.");
+    }
+
+    if password.len() < 8 {
+        exit_with_error("Master password must be at least 8 characters.");
+    }
+
+    password
 }
 
 fn exit_with_error(message: &str) -> ! {
@@ -101,12 +114,23 @@ fn load_vault_or_exit(master_password: &str) -> models::Vault {
     }
 }
 
+fn confirm_action(message: &str) -> bool {
+    println!("{} Type YES to confirm:", message);
+
+    let mut input = String::new();
+    std::io::stdin()
+        .read_line(&mut input)
+        .expect("Failed to read input");
+
+    input.trim() == "YES"
+}
+
 fn main() {
     let cli = Cli::parse();
 
     match cli.command {
         Commands::Init => {
-            let master_password = ask_master_password();
+            let master_password = ask_confirmed_master_password();
 
             if let Err(error) = storage::init_vault(&master_password) {
                 exit_with_error(&format!("Failed to initialize encrypted vault: {}", error));
@@ -184,6 +208,11 @@ fn main() {
             let master_password = ask_master_password();
             let mut vault = load_vault_or_exit(&master_password);
 
+            if !confirm_action("This will delete the entry permanently.") {
+                println!("Delete cancelled.");
+                return;
+            }
+
             if vault::delete_entry(&mut vault, title) {
                 if let Err(error) = storage::save_vault(&vault, &master_password) {
                     exit_with_error(&format!("Failed to save vault: {}", error));
@@ -238,11 +267,7 @@ fn main() {
 
         Commands::ChangeMaster => {
             let old_password = ask_master_password();
-            let new_password = ask_new_master_password();
-
-            if new_password.len() < 8 {
-                exit_with_error("New master password must be at least 8 characters.");
-            }
+            let new_password = ask_confirmed_master_password();
 
             if storage::change_master_password(&old_password, &new_password).is_err() {
                 exit_with_error("Invalid old master password or corrupted vault.");
