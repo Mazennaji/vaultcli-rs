@@ -82,3 +82,24 @@ pub fn import_backup(path: &str) -> io::Result<()> {
     fs::copy(path, VAULT_FILE)?;
     Ok(())
 }
+
+pub fn change_master_password(old_password: &str, new_password: &str) -> io::Result<()> {
+    let vault = load_vault(old_password)?;
+
+    let salt = crypto::generate_salt();
+    let key = crypto::derive_key(new_password, &salt)
+        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+
+    let json = serde_json::to_string_pretty(&vault)?;
+
+    let encrypted = crypto::encrypt(&json, &key)
+        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+
+    let file = EncryptedVault {
+        salt,
+        data: encrypted,
+    };
+
+    let content = serde_json::to_string_pretty(&file)?;
+    fs::write(VAULT_FILE, content)
+}
