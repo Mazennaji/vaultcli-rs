@@ -6,6 +6,7 @@ mod storage;
 mod ui;
 mod vault;
 mod clipboard;
+mod tui;
 
 use clap::{Parser, Subcommand};
 use rpassword::read_password;
@@ -89,6 +90,7 @@ enum Commands {
     Copy {
         title: String,
     },
+    Tui,
 }
 
 fn ask_master_password() -> String {
@@ -314,6 +316,15 @@ fn main() {
                     ui::success("Password copied to clipboard.");
                 }
                 None => ui::warning("Entry not found."),
+            }
+        }
+
+        Commands::Tui => {
+            let master_password = ask_master_password();
+            let vault = load_vault_or_exit(&master_password);
+
+            if let Err(error) = tui::run_tui(&vault) {
+                exit_with_error(&format!("Failed to launch TUI: {}", error));
             }
         }
     }
