@@ -1,3 +1,4 @@
+use crate::clipboard;
 use crate::models::{Vault, VaultEntry};
 use crossterm::{
     event::{self, Event, KeyCode},
@@ -40,6 +41,7 @@ fn render_loop(
     let mut reveal_password = false;
     let mut search_mode = false;
     let mut search_query = String::new();
+    let mut status_message = String::from("Ready");
 
     loop {
         let filtered_entries = filter_entries(vault, &search_query);
@@ -57,6 +59,7 @@ fn render_loop(
                     Constraint::Length(3),
                     Constraint::Length(3),
                     Constraint::Min(8),
+                    Constraint::Length(3),
                     Constraint::Length(3),
                 ])
                 .split(area);
@@ -116,16 +119,21 @@ fn render_loop(
 
             frame.render_widget(details_panel, body[1]);
 
+            let status = Paragraph::new(status_message.clone())
+                .block(Block::default().borders(Borders::ALL).title("Status"));
+
+            frame.render_widget(status, vertical[3]);
+
             let footer_text = if search_mode {
                 "Type to search | Backspace Delete | Enter/Esc Exit search | q Quit"
             } else {
-                "/ Search | ↑/↓ Navigate | r Reveal/Hide password | q Quit"
+                "/ Search | ↑/↓ Navigate | r Reveal/Hide | c Copy password | q Quit"
             };
 
             let footer = Paragraph::new(footer_text)
                 .block(Block::default().borders(Borders::ALL).title("Controls"));
 
-            frame.render_widget(footer, vertical[3]);
+            frame.render_widget(footer, vertical[4]);
         })?;
 
         if let Event::Key(key) = event::read()? {
@@ -134,17 +142,20 @@ fn render_loop(
                     KeyCode::Esc | KeyCode::Enter => {
                         search_mode = false;
                         reveal_password = false;
+                        status_message = String::from("Exited search mode");
                     }
                     KeyCode::Backspace => {
                         search_query.pop();
                         selected = 0;
                         reveal_password = false;
+                        status_message = String::from("Searching...");
                     }
                     KeyCode::Char('q') if search_query.is_empty() => break,
                     KeyCode::Char(value) => {
                         search_query.push(value);
                         selected = 0;
                         reveal_password = false;
+                        status_message = String::from("Searching...");
                     }
                     _ => {}
                 }
@@ -153,19 +164,43 @@ fn render_loop(
                     KeyCode::Char('q') => break,
                     KeyCode::Char('/') => {
                         search_mode = true;
+                        status_message = String::from("Search mode enabled");
                     }
                     KeyCode::Char('r') => {
                         reveal_password = !reveal_password;
+
+                        status_message = if reveal_password {
+                            String::from("Password revealed")
+                        } else {
+                            String::from("Password hidden")
+                        };
+                    }
+                    KeyCode::Char('c') => {
+                        if let Some(entry) = filtered_entries.get(selected) {
+                            match clipboard::copy_to_clipboard(&entry.password) {
+                                Ok(_) => {
+                                    status_message = String::from("Password copied to clipboard");
+                                }
+                                Err(error) => {
+                                    status_message =
+                                        format!("Failed to copy password: {}", error);
+                                }
+                            }
+                        } else {
+                            status_message = String::from("No entry selected");
+                        }
                     }
                     KeyCode::Down => {
                         if !filtered_entries.is_empty() && selected + 1 < filtered_entries.len() {
                             selected += 1;
                             reveal_password = false;
+                            status_message = String::from("Moved down");
                         }
                     }
                     KeyCode::Up => {
                         selected = selected.saturating_sub(1);
                         reveal_password = false;
+                        status_message = String::from("Moved up");
                     }
                     _ => {}
                 }
