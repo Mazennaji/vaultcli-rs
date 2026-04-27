@@ -27,7 +27,7 @@ pub fn list_entries(vault: &Vault) {
     }
 }
 
-pub fn get_entry(vault: &Vault, title: String) {
+pub fn get_entry(vault: &Vault, title: String, reveal_password: bool) {
     let found = vault
         .entries
         .iter()
@@ -36,9 +36,15 @@ pub fn get_entry(vault: &Vault, title: String) {
     match found {
         Some(entry) => {
             ui::title("Vault Entry");
+
             println!("Title: {}", entry.title);
             println!("Username: {}", entry.username);
-            println!("Password: {}", entry.password);
+
+            if reveal_password {
+                println!("Password: {}", entry.password);
+            } else {
+                println!("Password: ********");
+            }
 
             if let Some(website) = &entry.website {
                 println!("Website: {}", website);
