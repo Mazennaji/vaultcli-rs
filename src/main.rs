@@ -60,6 +60,14 @@ enum Commands {
     },
 
     Summary,
+
+    Export {
+        path: String,
+    },
+
+    Import {
+        path: String,
+    },
 }
 
 fn ask_master_password() -> String {
@@ -70,6 +78,13 @@ fn ask_master_password() -> String {
 fn exit_with_error(message: &str) -> ! {
     eprintln!("Error: {}", message);
     process::exit(1);
+}
+
+fn load_vault_or_exit(master_password: &str) -> models::Vault {
+    match storage::load_vault(master_password) {
+        Ok(vault) => vault,
+        Err(_) => exit_with_error("Invalid master password or corrupted vault."),
+    }
 }
 
 fn main() {
@@ -94,11 +109,7 @@ fn main() {
             notes,
         } => {
             let master_password = ask_master_password();
-
-            let mut vault = match storage::load_vault(&master_password) {
-                Ok(vault) => vault,
-                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
-            };
+            let mut vault = load_vault_or_exit(&master_password);
 
             vault::add_entry(&mut vault, title, username, password, website, notes);
 
@@ -111,33 +122,21 @@ fn main() {
 
         Commands::List => {
             let master_password = ask_master_password();
-
-            let vault = match storage::load_vault(&master_password) {
-                Ok(vault) => vault,
-                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
-            };
+            let vault = load_vault_or_exit(&master_password);
 
             vault::list_entries(&vault);
         }
 
         Commands::Get { title } => {
             let master_password = ask_master_password();
-
-            let vault = match storage::load_vault(&master_password) {
-                Ok(vault) => vault,
-                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
-            };
+            let vault = load_vault_or_exit(&master_password);
 
             vault::get_entry(&vault, title);
         }
 
         Commands::Search { query } => {
             let master_password = ask_master_password();
-
-            let vault = match storage::load_vault(&master_password) {
-                Ok(vault) => vault,
-                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
-            };
+            let vault = load_vault_or_exit(&master_password);
 
             vault::search_entries(&vault, query);
         }
@@ -153,22 +152,14 @@ fn main() {
 
         Commands::Audit => {
             let master_password = ask_master_password();
-
-            let vault = match storage::load_vault(&master_password) {
-                Ok(vault) => vault,
-                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
-            };
+            let vault = load_vault_or_exit(&master_password);
 
             audit::audit_entries(&vault.entries);
         }
 
         Commands::Delete { title } => {
             let master_password = ask_master_password();
-
-            let mut vault = match storage::load_vault(&master_password) {
-                Ok(vault) => vault,
-                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
-            };
+            let mut vault = load_vault_or_exit(&master_password);
 
             if vault::delete_entry(&mut vault, title) {
                 if let Err(error) = storage::save_vault(&vault, &master_password) {
@@ -186,11 +177,7 @@ fn main() {
             new_password,
         } => {
             let master_password = ask_master_password();
-
-            let mut vault = match storage::load_vault(&master_password) {
-                Ok(vault) => vault,
-                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
-            };
+            let mut vault = load_vault_or_exit(&master_password);
 
             if vault::update_password(&mut vault, title, new_password) {
                 if let Err(error) = storage::save_vault(&vault, &master_password) {
@@ -205,13 +192,25 @@ fn main() {
 
         Commands::Summary => {
             let master_password = ask_master_password();
-
-            let vault = match storage::load_vault(&master_password) {
-                Ok(vault) => vault,
-                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
-            };
+            let vault = load_vault_or_exit(&master_password);
 
             vault::summary(&vault);
+        }
+
+        Commands::Export { path } => {
+            if let Err(error) = storage::export_backup(&path) {
+                exit_with_error(&format!("Failed to export backup: {}", error));
+            }
+
+            println!("Backup exported successfully.");
+        }
+
+        Commands::Import { path } => {
+            if let Err(error) = storage::import_backup(&path) {
+                exit_with_error(&format!("Failed to import backup: {}", error));
+            }
+
+            println!("Backup imported successfully.");
         }
     }
 }
