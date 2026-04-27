@@ -5,6 +5,7 @@ mod models;
 mod storage;
 mod ui;
 mod vault;
+mod clipboard;
 
 use clap::{Parser, Subcommand};
 use rpassword::read_password;
@@ -77,6 +78,10 @@ enum Commands {
 
     Category {
         category: String,
+    },
+
+    Copy {
+        title: String,
     },
 }
 
@@ -152,13 +157,7 @@ fn main() {
             let mut vault = load_vault_or_exit(&master_password);
 
             vault::add_entry(
-                &mut vault,
-                title,
-                username,
-                password,
-                website,
-                notes,
-                category,
+                &mut vault, title, username, password, website, notes, category,
             );
 
             if let Err(error) = storage::save_vault(&vault, &master_password) {
@@ -282,6 +281,22 @@ fn main() {
             let vault = load_vault_or_exit(&master_password);
 
             vault::list_by_category(&vault, category);
+        }
+
+        Commands::Copy { title } => {
+            let master_password = ask_master_password();
+            let vault = load_vault_or_exit(&master_password);
+
+            match vault::find_entry_by_title(&vault, &title) {
+                Some(entry) => {
+                    if let Err(error) = clipboard::copy_to_clipboard(&entry.password) {
+                        exit_with_error(&format!("Failed to copy password: {}", error));
+                    }
+
+                    ui::success("Password copied to clipboard.");
+                }
+                None => ui::warning("Entry not found."),
+            }
         }
     }
 }
