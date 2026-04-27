@@ -68,10 +68,17 @@ enum Commands {
     Import {
         path: String,
     },
+
+    ChangeMaster,
 }
 
 fn ask_master_password() -> String {
     println!("Enter master password:");
+    read_password().expect("Failed to read password")
+}
+
+fn ask_new_master_password() -> String {
+    println!("Enter new master password:");
     read_password().expect("Failed to read password")
 }
 
@@ -211,6 +218,21 @@ fn main() {
             }
 
             println!("Backup imported successfully.");
+        }
+
+        Commands::ChangeMaster => {
+            let old_password = ask_master_password();
+            let new_password = ask_new_master_password();
+
+            if new_password.len() < 8 {
+                exit_with_error("New master password must be at least 8 characters.");
+            }
+
+            if storage::change_master_password(&old_password, &new_password).is_err() {
+                exit_with_error("Invalid old master password or corrupted vault.");
+            }
+
+            println!("Master password changed successfully.");
         }
     }
 }
