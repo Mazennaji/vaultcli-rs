@@ -4,6 +4,7 @@ mod generator;
 mod models;
 mod storage;
 mod vault;
+mod ui;
 
 use clap::{Parser, Subcommand};
 use rpassword::read_password;
@@ -103,7 +104,7 @@ fn ask_confirmed_master_password() -> String {
 }
 
 fn exit_with_error(message: &str) -> ! {
-    eprintln!("Error: {}", message);
+    ui::error(message);
     process::exit(1);
 }
 
@@ -136,7 +137,7 @@ fn main() {
                 exit_with_error(&format!("Failed to initialize encrypted vault: {}", error));
             }
 
-            println!("Encrypted vault initialized successfully.");
+            ui::success("Encrypted vault initialized successfully.");
         }
 
         Commands::Add {
@@ -164,7 +165,7 @@ fn main() {
                 exit_with_error(&format!("Failed to save vault: {}", error));
             }
 
-            println!("Entry added successfully.");
+            ui::success("Entry added successfully.");
         }
 
         Commands::List => {
@@ -218,9 +219,9 @@ fn main() {
                     exit_with_error(&format!("Failed to save vault: {}", error));
                 }
 
-                println!("Entry deleted successfully.");
+                ui::success("Entry deleted successfully.");
             } else {
-                println!("Entry not found.");
+                ui::error("Entry not found.");
             }
         }
 
@@ -236,9 +237,9 @@ fn main() {
                     exit_with_error(&format!("Failed to save vault: {}", error));
                 }
 
-                println!("Password updated successfully.");
+                ui::success("Password updated successfully.");
             } else {
-                println!("Entry not found.");
+                ui::error("Entry not found.");
             }
         }
 
@@ -254,7 +255,7 @@ fn main() {
                 exit_with_error(&format!("Failed to export backup: {}", error));
             }
 
-            println!("Backup exported successfully.");
+            ui::success("Backup exported successfully.");
         }
 
         Commands::Import { path } => {
@@ -262,7 +263,7 @@ fn main() {
                 exit_with_error(&format!("Failed to import backup: {}", error));
             }
 
-            println!("Backup imported successfully.");
+            ui::success("Backup imported successfully.");
         }
 
         Commands::ChangeMaster => {
@@ -273,7 +274,7 @@ fn main() {
                 exit_with_error("Invalid old master password or corrupted vault.");
             }
 
-            println!("Master password changed successfully.");
+            ui::success("Master password changed successfully.");
         }
 
         Commands::Category { category } => {
