@@ -12,10 +12,6 @@ pub fn warning(message: &str) {
     println!("{}", format!("! {}", message).yellow().bold());
 }
 
-pub fn info(message: &str) {
-    println!("{}", format!("→ {}", message).cyan());
-}
-
 pub fn title(message: &str) {
     println!();
     println!("{}", message.bold().bright_white());

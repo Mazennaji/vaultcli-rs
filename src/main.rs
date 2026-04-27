@@ -3,8 +3,8 @@ mod crypto;
 mod generator;
 mod models;
 mod storage;
-mod vault;
 mod ui;
+mod vault;
 
 use clap::{Parser, Subcommand};
 use rpassword::read_password;
@@ -210,7 +210,7 @@ fn main() {
             let mut vault = load_vault_or_exit(&master_password);
 
             if !confirm_action("This will delete the entry permanently.") {
-                println!("Delete cancelled.");
+                ui::warning("Delete cancelled.");
                 return;
             }
 
@@ -221,7 +221,7 @@ fn main() {
 
                 ui::success("Entry deleted successfully.");
             } else {
-                ui::error("Entry not found.");
+                ui::warning("Entry not found.");
             }
         }
 
@@ -239,7 +239,7 @@ fn main() {
 
                 ui::success("Password updated successfully.");
             } else {
-                ui::error("Entry not found.");
+                ui::warning("Entry not found.");
             }
         }
 

@@ -20,6 +20,8 @@ pub fn list_entries(vault: &Vault) {
         return;
     }
 
+    ui::title("Vault Entries");
+
     for entry in &vault.entries {
         println!("{} | {} | {}", entry.id, entry.title, entry.username);
     }
@@ -33,6 +35,7 @@ pub fn get_entry(vault: &Vault, title: String) {
 
     match found {
         Some(entry) => {
+            ui::title("Vault Entry");
             println!("Title: {}", entry.title);
             println!("Username: {}", entry.username);
             println!("Password: {}", entry.password);
@@ -44,8 +47,12 @@ pub fn get_entry(vault: &Vault, title: String) {
             if let Some(notes) = &entry.notes {
                 println!("Notes: {}", notes);
             }
+
+            if let Some(category) = &entry.category {
+                println!("Category: {}", category);
+            }
         }
-        None => println!("Entry not found."),
+        None => ui::warning("Entry not found."),
     }
 }
 
@@ -63,13 +70,20 @@ pub fn search_entries(vault: &Vault, query: String) {
                     .as_ref()
                     .map(|website| website.to_lowercase().contains(&query))
                     .unwrap_or(false)
+                || entry
+                    .category
+                    .as_ref()
+                    .map(|category| category.to_lowercase().contains(&query))
+                    .unwrap_or(false)
         })
         .collect();
 
     if results.is_empty() {
-        println!("No matching entries found.");
+        ui::warning("No matching entries found.");
         return;
     }
+
+    ui::title("Search Results");
 
     for entry in results {
         println!("{} | {} | {}", entry.id, entry.title, entry.username);
@@ -100,8 +114,8 @@ pub fn update_password(vault: &mut Vault, title: String, new_password: String) -
 }
 
 pub fn summary(vault: &Vault) {
-    println!("Vault Summary");
-    println!("-------------");
+    ui::title("Vault Summary");
+
     println!("Total entries: {}", vault.entries.len());
 
     let with_websites = vault
@@ -111,6 +125,14 @@ pub fn summary(vault: &Vault) {
         .count();
 
     println!("Entries with websites: {}", with_websites);
+
+    let with_categories = vault
+        .entries
+        .iter()
+        .filter(|entry| entry.category.is_some())
+        .count();
+
+    println!("Entries with categories: {}", with_categories);
 }
 
 pub fn list_by_category(vault: &Vault, category: String) {
@@ -129,9 +151,11 @@ pub fn list_by_category(vault: &Vault, category: String) {
         .collect();
 
     if results.is_empty() {
-        println!("No entries found in this category.");
+        ui::warning("No entries found in this category.");
         return;
     }
+
+    ui::title("Category Results");
 
     for entry in results {
         println!("{} | {} | {}", entry.id, entry.title, entry.username);
