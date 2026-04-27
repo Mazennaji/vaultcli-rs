@@ -72,3 +72,13 @@ pub fn save_vault(vault: &Vault, master_password: &str) -> io::Result<()> {
     let output = serde_json::to_string_pretty(&updated)?;
     fs::write(VAULT_FILE, output)
 }
+
+pub fn export_backup(path: &str) -> io::Result<()> {
+    fs::copy(VAULT_FILE, path)?;
+    Ok(())
+}
+
+pub fn import_backup(path: &str) -> io::Result<()> {
+    fs::copy(path, VAULT_FILE)?;
+    Ok(())
+}
