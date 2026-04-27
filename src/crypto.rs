@@ -2,12 +2,14 @@ use aes_gcm::{
     aead::{Aead, KeyInit},
     Aes256Gcm, Nonce,
 };
+
 use argon2::{
     password_hash::{rand_core::OsRng, SaltString},
     Argon2, PasswordHasher,
 };
+
 use base64::{engine::general_purpose, Engine as _};
-use rand::{rngs::OsRng, RngCore};
+use rand::RngCore; 
 
 const NONCE_SIZE: usize = 12;
 
