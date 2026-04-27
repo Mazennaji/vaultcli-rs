@@ -7,6 +7,7 @@ mod vault;
 
 use clap::{Parser, Subcommand};
 use rpassword::read_password;
+use std::process;
 
 #[derive(Parser)]
 #[command(name = "vaultcli")]
@@ -48,11 +49,27 @@ enum Commands {
     },
 
     Audit,
+
+    Delete {
+        title: String,
+    },
+
+    UpdatePassword {
+        title: String,
+        new_password: String,
+    },
+
+    Summary,
 }
 
 fn ask_master_password() -> String {
     println!("Enter master password:");
     read_password().expect("Failed to read password")
+}
+
+fn exit_with_error(message: &str) -> ! {
+    eprintln!("Error: {}", message);
+    process::exit(1);
 }
 
 fn main() {
@@ -62,7 +79,9 @@ fn main() {
         Commands::Init => {
             let master_password = ask_master_password();
 
-            storage::init_vault(&master_password).expect("Failed to initialize encrypted vault");
+            if let Err(error) = storage::init_vault(&master_password) {
+                exit_with_error(&format!("Failed to initialize encrypted vault: {}", error));
+            }
 
             println!("Encrypted vault initialized successfully.");
         }
@@ -76,11 +95,16 @@ fn main() {
         } => {
             let master_password = ask_master_password();
 
-            let mut vault = storage::load_vault(&master_password).expect("Failed to load vault");
+            let mut vault = match storage::load_vault(&master_password) {
+                Ok(vault) => vault,
+                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
+            };
 
             vault::add_entry(&mut vault, title, username, password, website, notes);
 
-            storage::save_vault(&vault, &master_password).expect("Failed to save vault");
+            if let Err(error) = storage::save_vault(&vault, &master_password) {
+                exit_with_error(&format!("Failed to save vault: {}", error));
+            }
 
             println!("Entry added successfully.");
         }
@@ -88,7 +112,10 @@ fn main() {
         Commands::List => {
             let master_password = ask_master_password();
 
-            let vault = storage::load_vault(&master_password).expect("Failed to load vault");
+            let vault = match storage::load_vault(&master_password) {
+                Ok(vault) => vault,
+                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
+            };
 
             vault::list_entries(&vault);
         }
@@ -96,7 +123,10 @@ fn main() {
         Commands::Get { title } => {
             let master_password = ask_master_password();
 
-            let vault = storage::load_vault(&master_password).expect("Failed to load vault");
+            let vault = match storage::load_vault(&master_password) {
+                Ok(vault) => vault,
+                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
+            };
 
             vault::get_entry(&vault, title);
         }
@@ -104,12 +134,19 @@ fn main() {
         Commands::Search { query } => {
             let master_password = ask_master_password();
 
-            let vault = storage::load_vault(&master_password).expect("Failed to load vault");
+            let vault = match storage::load_vault(&master_password) {
+                Ok(vault) => vault,
+                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
+            };
 
             vault::search_entries(&vault, query);
         }
 
         Commands::Generate { length } => {
+            if length < 8 {
+                exit_with_error("Password length must be at least 8 characters.");
+            }
+
             let password = generator::generate_password(length);
             println!("{}", password);
         }
@@ -117,9 +154,64 @@ fn main() {
         Commands::Audit => {
             let master_password = ask_master_password();
 
-            let vault = storage::load_vault(&master_password).expect("Failed to load vault");
+            let vault = match storage::load_vault(&master_password) {
+                Ok(vault) => vault,
+                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
+            };
 
             audit::audit_entries(&vault.entries);
+        }
+
+        Commands::Delete { title } => {
+            let master_password = ask_master_password();
+
+            let mut vault = match storage::load_vault(&master_password) {
+                Ok(vault) => vault,
+                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
+            };
+
+            if vault::delete_entry(&mut vault, title) {
+                if let Err(error) = storage::save_vault(&vault, &master_password) {
+                    exit_with_error(&format!("Failed to save vault: {}", error));
+                }
+
+                println!("Entry deleted successfully.");
+            } else {
+                println!("Entry not found.");
+            }
+        }
+
+        Commands::UpdatePassword {
+            title,
+            new_password,
+        } => {
+            let master_password = ask_master_password();
+
+            let mut vault = match storage::load_vault(&master_password) {
+                Ok(vault) => vault,
+                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
+            };
+
+            if vault::update_password(&mut vault, title, new_password) {
+                if let Err(error) = storage::save_vault(&vault, &master_password) {
+                    exit_with_error(&format!("Failed to save vault: {}", error));
+                }
+
+                println!("Password updated successfully.");
+            } else {
+                println!("Entry not found.");
+            }
+        }
+
+        Commands::Summary => {
+            let master_password = ask_master_password();
+
+            let vault = match storage::load_vault(&master_password) {
+                Ok(vault) => vault,
+                Err(_) => exit_with_error("Invalid master password or corrupted vault."),
+            };
+
+            vault::summary(&vault);
         }
     }
 }
