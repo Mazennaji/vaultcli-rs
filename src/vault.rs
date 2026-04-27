@@ -46,3 +46,30 @@ pub fn get_entry(vault: &Vault, title: String) {
         None => println!("Entry not found."),
     }
 }
+
+pub fn search_entries(vault: &Vault, query: String) {
+    let query = query.to_lowercase();
+
+    let results: Vec<&VaultEntry> = vault
+        .entries
+        .iter()
+        .filter(|entry| {
+            entry.title.to_lowercase().contains(&query)
+                || entry.username.to_lowercase().contains(&query)
+                || entry
+                    .website
+                    .as_ref()
+                    .map(|website| website.to_lowercase().contains(&query))
+                    .unwrap_or(false)
+        })
+        .collect();
+
+    if results.is_empty() {
+        println!("No matching entries found.");
+        return;
+    }
+
+    for entry in results {
+        println!("{} | {} | {}", entry.id, entry.title, entry.username);
+    }
+}
