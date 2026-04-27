@@ -135,6 +135,13 @@ pub fn summary(vault: &Vault) {
     println!("Entries with categories: {}", with_categories);
 }
 
+pub fn find_entry_by_title<'a>(vault: &'a Vault, title: &str) -> Option<&'a VaultEntry> {
+    vault
+        .entries
+        .iter()
+        .find(|entry| entry.title.to_lowercase() == title.to_lowercase())
+}
+
 pub fn list_by_category(vault: &Vault, category: String) {
     let category = category.to_lowercase();
 
