@@ -209,3 +209,9 @@ pub fn list_backups() -> io::Result<Vec<PathBuf>> {
 
     Ok(backups)
 }
+
+pub fn restore_backup(path: &str) -> io::Result<()> {
+    auto_backup()?;
+    fs::copy(path, vault_path()?)?;
+    Ok(())
+}
