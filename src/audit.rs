@@ -24,3 +24,37 @@ pub fn audit_entries(entries: &[VaultEntry]) {
         println!("{} | {}", entry.title, entry.username);
     }
 }
+
+pub fn password_strength(password: &str) -> String {
+    let mut score = 0;
+
+    if password.len() >= 8 {
+        score += 1;
+    }
+
+    if password.len() >= 12 {
+        score += 1;
+    }
+
+    if password.chars().any(|c| c.is_ascii_lowercase()) {
+        score += 1;
+    }
+
+    if password.chars().any(|c| c.is_ascii_uppercase()) {
+        score += 1;
+    }
+
+    if password.chars().any(|c| c.is_ascii_digit()) {
+        score += 1;
+    }
+
+    if password.chars().any(|c| !c.is_ascii_alphanumeric()) {
+        score += 1;
+    }
+
+    match score {
+        0..=2 => "Weak".to_string(),
+        3..=4 => "Medium".to_string(),
+        _ => "Strong".to_string(),
+    }
+}
