@@ -3,3 +3,4 @@ vault.secure
 vault.json
 
 *.secure
+*.csv
