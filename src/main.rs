@@ -118,6 +118,29 @@ enum Commands {
     Strength {
         password: String,
     },
+
+    QuickAdd {
+        title: String,
+        username: String,
+
+        #[arg(short, long)]
+        website: Option<String>,
+
+        #[arg(short, long)]
+        notes: Option<String>,
+
+        #[arg(short, long)]
+        category: Option<String>,
+
+        #[arg(short, long, default_value_t = 16)]
+        length: usize,
+
+        #[arg(long)]
+        numbers: bool,
+
+        #[arg(long)]
+        symbols: bool,
+    },
 }
 
 fn ask_master_password() -> String {
@@ -445,6 +468,49 @@ fn main() {
 
             ui::title("Password Strength");
             println!("Result: {}", strength);
+        }
+
+        Commands::QuickAdd {
+            title,
+            username,
+            website,
+            notes,
+            category,
+            length,
+            numbers,
+            symbols,
+        } => {
+            if length < 8 {
+                exit_with_error("Password length must be at least 8 characters.");
+            }
+
+            let master_password = ask_master_password();
+            let mut vault = load_vault_or_exit(&master_password);
+
+            let password = generator::generate_password(length, numbers, symbols);
+            let strength = audit::password_strength(&password);
+
+            vault::add_entry(
+                &mut vault,
+                title,
+                username,
+                password.clone(),
+                website,
+                notes,
+                category,
+            );
+
+            if let Err(error) = storage::save_vault(&vault, &master_password) {
+                exit_with_error(&format!("Failed to save vault: {}", error));
+            }
+
+            ui::success("Entry added with generated password.");
+            println!("Strength: {}", strength);
+
+            match clipboard::copy_to_clipboard(&password) {
+                Ok(_) => ui::success("Generated password copied to clipboard."),
+                Err(_) => ui::warning("Failed to copy generated password."),
+            }
         }
     }
 }
