@@ -58,6 +58,12 @@ enum Commands {
     Generate {
         #[arg(short, long, default_value_t = 16)]
         length: usize,
+
+        #[arg(long, default_value_t = true)]
+        numbers: bool,
+
+        #[arg(long, default_value_t = false)]
+        symbols: bool,
     },
 
     Audit,
@@ -225,12 +231,16 @@ fn main() {
             vault::search_entries(&vault, query);
         }
 
-        Commands::Generate { length } => {
+        Commands::Generate {
+            length,
+            numbers,
+            symbols,
+        } => {
             if length < 8 {
                 exit_with_error("Password length must be at least 8 characters.");
             }
 
-            let password = generator::generate_password(length);
+            let password = generator::generate_password(length, numbers, symbols);
             println!("{}", password);
         }
 
