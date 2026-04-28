@@ -104,6 +104,10 @@ enum Commands {
     Restore {
         path: String,
     },
+
+    ImportCsv {
+        path: String,
+    },
 }
 
 fn ask_master_password() -> String {
@@ -395,6 +399,22 @@ fn main() {
             }
 
             ui::success("Backup restored successfully.");
+        }
+
+        Commands::ImportCsv { path } => {
+            let master_password = ask_master_password();
+            let mut vault = load_vault_or_exit(&master_password);
+
+            let imported_count = match storage::import_csv(&mut vault, &path) {
+                Ok(count) => count,
+                Err(error) => exit_with_error(&format!("Failed to import CSV: {}", error)),
+            };
+
+            if let Err(error) = storage::save_vault(&vault, &master_password) {
+                exit_with_error(&format!("Failed to save vault: {}", error));
+            }
+
+            ui::success(&format!("Imported {} entries from CSV.", imported_count));
         }
     }
 }
