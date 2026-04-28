@@ -3,8 +3,9 @@ use crate::models::Vault;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io;
-use std::path::Path;
+use std::path::PathBuf;
 
+const VAULT_DIR: &str = ".vaultcli";
 const VAULT_FILE: &str = "vault.secure";
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -13,16 +14,41 @@ struct EncryptedVault {
     data: String,
 }
 
+fn vault_dir() -> io::Result<PathBuf> {
+    let home = dirs::home_dir()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Could not find home directory"))?;
+
+    let path = home.join(VAULT_DIR);
+
+    if !path.exists() {
+        fs::create_dir_all(&path)?;
+    }
+
+    Ok(path)
+}
+
+fn vault_path() -> io::Result<PathBuf> {
+    Ok(vault_dir()?.join(VAULT_FILE))
+}
+
+pub fn vault_exists() -> bool {
+    match vault_path() {
+        Ok(path) => path.exists(),
+        Err(_) => false,
+    }
+}
+
 pub fn init_vault(master_password: &str) -> io::Result<()> {
     let salt = crypto::generate_salt();
+
     let key = crypto::derive_key(master_password, &salt)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        .map_err(|error| io::Error::new(io::ErrorKind::Other, error))?;
 
     let vault = Vault::default();
     let json = serde_json::to_string_pretty(&vault)?;
 
-    let encrypted =
-        crypto::encrypt(&json, &key).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+    let encrypted = crypto::encrypt(&json, &key)
+        .map_err(|error| io::Error::new(io::ErrorKind::Other, error))?;
 
     let file = EncryptedVault {
         salt,
@@ -30,22 +56,24 @@ pub fn init_vault(master_password: &str) -> io::Result<()> {
     };
 
     let content = serde_json::to_string_pretty(&file)?;
-    fs::write(VAULT_FILE, content)
+    fs::write(vault_path()?, content)
 }
 
 pub fn load_vault(master_password: &str) -> io::Result<Vault> {
-    if !Path::new(VAULT_FILE).exists() {
+    let path = vault_path()?;
+
+    if !path.exists() {
         return Ok(Vault::default());
     }
 
-    let content = fs::read_to_string(VAULT_FILE)?;
+    let content = fs::read_to_string(path)?;
     let encrypted_vault: EncryptedVault = serde_json::from_str(&content)?;
 
     let key = crypto::derive_key(master_password, &encrypted_vault.salt)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        .map_err(|error| io::Error::new(io::ErrorKind::Other, error))?;
 
     let decrypted = crypto::decrypt(&encrypted_vault.data, &key)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        .map_err(|error| io::Error::new(io::ErrorKind::Other, error))?;
 
     let vault = serde_json::from_str(&decrypted)?;
 
@@ -53,16 +81,17 @@ pub fn load_vault(master_password: &str) -> io::Result<Vault> {
 }
 
 pub fn save_vault(vault: &Vault, master_password: &str) -> io::Result<()> {
-    let content = fs::read_to_string(VAULT_FILE)?;
+    let path = vault_path()?;
+    let content = fs::read_to_string(&path)?;
     let encrypted_vault: EncryptedVault = serde_json::from_str(&content)?;
 
     let key = crypto::derive_key(master_password, &encrypted_vault.salt)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        .map_err(|error| io::Error::new(io::ErrorKind::Other, error))?;
 
     let json = serde_json::to_string_pretty(vault)?;
 
-    let encrypted =
-        crypto::encrypt(&json, &key).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+    let encrypted = crypto::encrypt(&json, &key)
+        .map_err(|error| io::Error::new(io::ErrorKind::Other, error))?;
 
     let updated = EncryptedVault {
         salt: encrypted_vault.salt,
@@ -70,34 +99,31 @@ pub fn save_vault(vault: &Vault, master_password: &str) -> io::Result<()> {
     };
 
     let output = serde_json::to_string_pretty(&updated)?;
-    fs::write(VAULT_FILE, output)
+    fs::write(path, output)
 }
 
 pub fn export_backup(path: &str) -> io::Result<()> {
-    fs::copy(VAULT_FILE, path)?;
+    fs::copy(vault_path()?, path)?;
     Ok(())
 }
 
 pub fn import_backup(path: &str) -> io::Result<()> {
-    fs::copy(path, VAULT_FILE)?;
+    fs::copy(path, vault_path()?)?;
     Ok(())
-}
-
-pub fn vault_exists() -> bool {
-    Path::new(VAULT_FILE).exists()
 }
 
 pub fn change_master_password(old_password: &str, new_password: &str) -> io::Result<()> {
     let vault = load_vault(old_password)?;
 
     let salt = crypto::generate_salt();
+
     let key = crypto::derive_key(new_password, &salt)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        .map_err(|error| io::Error::new(io::ErrorKind::Other, error))?;
 
     let json = serde_json::to_string_pretty(&vault)?;
 
-    let encrypted =
-        crypto::encrypt(&json, &key).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+    let encrypted = crypto::encrypt(&json, &key)
+        .map_err(|error| io::Error::new(io::ErrorKind::Other, error))?;
 
     let file = EncryptedVault {
         salt,
@@ -105,5 +131,5 @@ pub fn change_master_password(old_password: &str, new_password: &str) -> io::Res
     };
 
     let content = serde_json::to_string_pretty(&file)?;
-    fs::write(VAULT_FILE, content)
+    fs::write(vault_path()?, content)
 }
