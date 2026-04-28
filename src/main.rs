@@ -226,6 +226,10 @@ fn main() {
             let master_password = ask_master_password();
             let mut vault = load_vault_or_exit(&master_password);
 
+            if vault::entry_exists(&vault, &title) {
+                exit_with_error("An entry with this title already exists.");
+            }
+
             vault::add_entry(
                 &mut vault, title, username, password, website, notes, category,
             );
@@ -486,6 +490,10 @@ fn main() {
 
             let master_password = ask_master_password();
             let mut vault = load_vault_or_exit(&master_password);
+
+            if vault::entry_exists(&vault, &title) {
+                exit_with_error("An entry with this title already exists.");
+            }
 
             let password = generator::generate_password(length, numbers, symbols);
             let strength = audit::password_strength(&password);
