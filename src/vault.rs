@@ -174,3 +174,10 @@ pub fn list_by_category(vault: &Vault, category: String) {
         println!("{} | {} | {}", entry.id, entry.title, entry.username);
     }
 }
+
+pub fn entry_exists(vault: &Vault, title: &str) -> bool {
+    vault
+        .entries
+        .iter()
+        .any(|entry| entry.title.to_lowercase() == title.to_lowercase())
+}
