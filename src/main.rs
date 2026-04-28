@@ -245,7 +245,11 @@ fn main() {
             }
 
             let password = generator::generate_password(length, numbers, symbols);
-            println!("{}", password);
+            let strength = audit::password_strength(&password);
+
+            ui::title("Generated Password");
+            println!("Password: {}", password);
+            println!("Strength: {}", strength);
         }
 
         Commands::Audit => {
