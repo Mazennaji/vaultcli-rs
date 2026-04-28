@@ -100,6 +100,10 @@ enum Commands {
     },
 
     Backups,
+
+    Restore {
+        path: String,
+    },
 }
 
 fn ask_master_password() -> String {
@@ -378,6 +382,19 @@ fn main() {
                     exit_with_error(&format!("Failed to list backups: {}", error));
                 }
             }
+        }
+
+        Commands::Restore { path } => {
+            if !confirm_action("This will replace your current vault with the selected backup.") {
+                ui::warning("Restore cancelled.");
+                return;
+            }
+
+            if let Err(error) = storage::restore_backup(&path) {
+                exit_with_error(&format!("Failed to restore backup: {}", error));
+            }
+
+            ui::success("Backup restored successfully.");
         }
     }
 }
