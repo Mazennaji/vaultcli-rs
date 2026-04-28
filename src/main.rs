@@ -114,6 +114,10 @@ enum Commands {
     ImportCsv {
         path: String,
     },
+
+    Strength {
+        password: String,
+    },
 }
 
 fn ask_master_password() -> String {
@@ -425,6 +429,13 @@ fn main() {
             }
 
             ui::success(&format!("Imported {} entries from CSV.", imported_count));
+        }
+
+        Commands::Strength { password } => {
+            let strength = audit::password_strength(&password);
+
+            ui::title("Password Strength");
+            println!("Result: {}", strength);
         }
     }
 }
