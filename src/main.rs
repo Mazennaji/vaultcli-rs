@@ -237,8 +237,8 @@ fn main() {
             }
 
             if vault::delete_entry(&mut vault, title) {
-                if let Err(error) = storage::save_vault(&vault, &master_password) {
-                    exit_with_error(&format!("Failed to save vault: {}", error));
+                if let Err(error) = storage::auto_backup() {
+                    exit_with_error(&format!("Failed to create backup: {}", error));
                 }
 
                 ui::success("Entry deleted successfully.");
