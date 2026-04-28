@@ -90,7 +90,10 @@ enum Commands {
     Copy {
         title: String,
     },
+
     Tui,
+
+    Config,
 }
 
 fn ask_master_password() -> String {
@@ -325,6 +328,18 @@ fn main() {
 
             if let Err(error) = tui::run_tui(&mut vault, &master_password) {
                 exit_with_error(&format!("Failed to launch TUI: {}", error));
+            }
+        }
+
+        Commands::Config => {
+            match storage::vault_path() {
+                Ok(path) => {
+                    ui::title("VaultCLI Config");
+                    println!("Vault path: {}", path.display());
+                }
+                Err(error) => {
+                    exit_with_error(&format!("Failed to read config: {}", error));
+                }
             }
         }
     }
