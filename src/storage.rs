@@ -186,3 +186,26 @@ pub fn export_csv(vault: &Vault, path: &str) -> io::Result<()> {
     writer.flush()?;
     Ok(())
 }
+
+pub fn list_backups() -> io::Result<Vec<PathBuf>> {
+    let backup_dir = vault_dir()?.join("backups");
+
+    if !backup_dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    let mut backups = Vec::new();
+
+    for entry in fs::read_dir(backup_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if path.extension().and_then(|ext| ext.to_str()) == Some("secure") {
+            backups.push(path);
+        }
+    }
+
+    backups.sort();
+
+    Ok(backups)
+}
