@@ -181,3 +181,20 @@ pub fn entry_exists(vault: &Vault, title: &str) -> bool {
         .iter()
         .any(|entry| entry.title.to_lowercase() == title.to_lowercase())
 }
+
+pub fn rename_entry(vault: &mut Vault, old_title: String, new_title: String) -> bool {
+    if entry_exists(vault, &new_title) {
+        return false;
+    }
+
+    if let Some(entry) = vault
+        .entries
+        .iter_mut()
+        .find(|entry| entry.title.to_lowercase() == old_title.to_lowercase())
+    {
+        entry.title = new_title;
+        return true;
+    }
+
+    false
+}
