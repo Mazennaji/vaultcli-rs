@@ -5,6 +5,7 @@ use std::fs;
 use std::io;
 use std::path::PathBuf;
 use chrono::Utc;
+use crate::vault;
 
 const VAULT_DIR: &str = ".vaultcli";
 const VAULT_FILE: &str = "vault.secure";
@@ -214,4 +215,39 @@ pub fn restore_backup(path: &str) -> io::Result<()> {
     auto_backup()?;
     fs::copy(path, vault_path()?)?;
     Ok(())
+}
+
+pub fn import_csv(vault: &mut Vault, path: &str) -> io::Result<usize> {
+    let mut reader = csv::Reader::from_path(path)?;
+    let mut imported_count = 0;
+
+    for result in reader.records() {
+        let record = result?;
+
+        let title = record.get(1).unwrap_or_default().to_string();
+        let username = record.get(2).unwrap_or_default().to_string();
+        let password = record.get(3).unwrap_or_default().to_string();
+        let website = optional_string(record.get(4).unwrap_or_default());
+        let notes = optional_string(record.get(5).unwrap_or_default());
+        let category = optional_string(record.get(6).unwrap_or_default());
+
+        if title.trim().is_empty() || username.trim().is_empty() || password.trim().is_empty() {
+            continue;
+        }
+
+        vault::add_entry(vault, title, username, password, website, notes, category);
+        imported_count += 1;
+    }
+
+    Ok(imported_count)
+}
+
+fn optional_string(value: &str) -> Option<String> {
+    let value = value.trim();
+
+    if value.is_empty() {
+        None
+    } else {
+        Some(value.to_string())
+    }
 }
