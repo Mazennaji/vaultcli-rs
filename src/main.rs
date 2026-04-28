@@ -98,6 +98,8 @@ enum Commands {
     ExportCsv {
         path: String,
     },
+
+    Backups,
 }
 
 fn ask_master_password() -> String {
@@ -356,6 +358,26 @@ fn main() {
             }
 
             ui::success("CSV exported successfully.");
+        }
+
+        Commands::Backups => {
+            match storage::list_backups() {
+                Ok(backups) => {
+                    if backups.is_empty() {
+                        ui::warning("No backups found.");
+                        return;
+                    }
+
+                    ui::title("Vault Backups");
+
+                    for backup in backups {
+                        println!("{}", backup.display());
+                    }
+                }
+                Err(error) => {
+                    exit_with_error(&format!("Failed to list backups: {}", error));
+                }
+            }
         }
     }
 }
