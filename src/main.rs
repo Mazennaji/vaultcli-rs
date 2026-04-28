@@ -250,6 +250,11 @@ fn main() {
             ui::title("Generated Password");
             println!("Password: {}", password);
             println!("Strength: {}", strength);
+
+            match clipboard::copy_to_clipboard(&password) {
+                Ok(_) => ui::success("Copied to clipboard"),
+                Err(_) => ui::warning("Failed to copy to clipboard"),
+            }
         }
 
         Commands::Audit => {
