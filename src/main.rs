@@ -141,6 +141,11 @@ enum Commands {
         #[arg(long)]
         symbols: bool,
     },
+
+    Rename {
+        old_title: String,
+        new_title: String,
+    },
 }
 
 fn ask_master_password() -> String {
@@ -518,6 +523,24 @@ fn main() {
             match clipboard::copy_to_clipboard(&password) {
                 Ok(_) => ui::success("Generated password copied to clipboard."),
                 Err(_) => ui::warning("Failed to copy generated password."),
+            }
+        }
+
+        Commands::Rename {
+            old_title,
+            new_title,
+        } => {
+            let master_password = ask_master_password();
+            let mut vault = load_vault_or_exit(&master_password);
+
+            if vault::rename_entry(&mut vault, old_title, new_title) {
+                if let Err(error) = storage::save_vault(&vault, &master_password) {
+                    exit_with_error(&format!("Failed to save vault: {}", error));
+                }
+
+                ui::success("Entry renamed successfully.");
+            } else {
+                ui::warning("Entry not found or new title already exists.");
             }
         }
     }
