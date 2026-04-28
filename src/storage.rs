@@ -27,7 +27,7 @@ fn vault_dir() -> io::Result<PathBuf> {
     Ok(path)
 }
 
-fn vault_path() -> io::Result<PathBuf> {
+pub fn vault_path() -> io::Result<PathBuf> {
     Ok(vault_dir()?.join(VAULT_FILE))
 }
 
