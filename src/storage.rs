@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io;
 use std::path::PathBuf;
+use chrono::Utc;
 
 const VAULT_DIR: &str = ".vaultcli";
 const VAULT_FILE: &str = "vault.secure";
@@ -132,4 +133,25 @@ pub fn change_master_password(old_password: &str, new_password: &str) -> io::Res
 
     let content = serde_json::to_string_pretty(&file)?;
     fs::write(vault_path()?, content)
+}
+
+pub fn auto_backup() -> io::Result<PathBuf> {
+    let source = vault_path()?;
+
+    if !source.exists() {
+        return Ok(source);
+    }
+
+    let backup_dir = vault_dir()?.join("backups");
+
+    if !backup_dir.exists() {
+        fs::create_dir_all(&backup_dir)?;
+    }
+
+    let timestamp = Utc::now().format("%Y%m%d_%H%M%S");
+    let backup_path = backup_dir.join(format!("vault_backup_{}.secure", timestamp));
+
+    fs::copy(source, &backup_path)?;
+
+    Ok(backup_path)
 }
