@@ -94,6 +94,10 @@ enum Commands {
     Tui,
 
     Config,
+
+    ExportCsv {
+        path: String,
+    },
 }
 
 fn ask_master_password() -> String {
@@ -341,6 +345,17 @@ fn main() {
                     exit_with_error(&format!("Failed to read config: {}", error));
                 }
             }
+        }
+
+        Commands::ExportCsv { path } => {
+            let master_password = ask_master_password();
+            let vault = load_vault_or_exit(&master_password);
+
+            if let Err(error) = storage::export_csv(&vault, &path) {
+                exit_with_error(&format!("Failed to export CSV: {}", error));
+            }
+
+            ui::success("CSV exported successfully.");
         }
     }
 }
