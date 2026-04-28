@@ -155,3 +155,34 @@ pub fn auto_backup() -> io::Result<PathBuf> {
 
     Ok(backup_path)
 }
+
+pub fn export_csv(vault: &Vault, path: &str) -> io::Result<()> {
+    let mut writer = csv::Writer::from_path(path)?;
+
+    writer.write_record([
+        "id",
+        "title",
+        "username",
+        "password",
+        "website",
+        "notes",
+        "category",
+        "created_at",
+    ])?;
+
+    for entry in &vault.entries {
+        writer.write_record([
+            entry.id.to_string(),
+            entry.title.clone(),
+            entry.username.clone(),
+            entry.password.clone(),
+            entry.website.clone().unwrap_or_default(),
+            entry.notes.clone().unwrap_or_default(),
+            entry.category.clone().unwrap_or_default(),
+            entry.created_at.to_rfc3339(),
+        ])?;
+    }
+
+    writer.flush()?;
+    Ok(())
+}
